@@ -20,7 +20,7 @@ Consumir datos desde una API propia.
 
 Mostrar imágenes del Star Wars Visual Guide.
 
-📁 Estructura del proyecyo
+📁 Estructura del proyecto
 
 starwars-blog-fullstack/
 │
