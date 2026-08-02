@@ -1,24 +1,19 @@
-import { useEffect, useState } from "react";
+import { Routes, Route } from "react-router-dom";
 import { Navbar } from "./Navbar";
-import CharacterCards from "./CharacterCards";
+import Home from "./Home";
+import Detail from "./Detail";
 
 function App() {
-  const [people, setPeople] = useState([]);
-
-  useEffect(() => {
-    fetch("http://localhost:3001/people")
-      .then((res) => res.json())
-      .then((data) => setPeople(data))
-      .catch((err) => console.error("Error:", err));
-  }, []);
-
   return (
     <div style={{ padding: "20px" }}>
       <Navbar />
 
-      <h1>StarWars People (desde tu API local)</h1>
-
-      <CharacterCards people={people} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/people/:id" element={<Detail itemType="people" />} />
+        <Route path="/planet/:id" element={<Detail itemType="planet" />} />
+        <Route path="/vehicle/:id" element={<Detail itemType="vehicle" />} />
+      </Routes>
     </div>
   );
 }
