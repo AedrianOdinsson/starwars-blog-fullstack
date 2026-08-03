@@ -17,7 +17,7 @@ function CharacterCards({ items, itemType, imagesMap = {} }) {
   }
 
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
+    <div className="d-flex flex-wrap gap-3">
       {items.map((item) => {
         const existingFav = favorites.find(
           (f) => f.item_type === itemType && f.item_id === item.id,
@@ -26,97 +26,73 @@ function CharacterCards({ items, itemType, imagesMap = {} }) {
 
         return (
           <div
+            className="card bg-dark text-white"
+            style={{ width: "220px" }}
             key={item.id}
-            style={{
-              border: "1px solid #ccc",
-              padding: "10px",
-              width: "200px",
-              borderRadius: "8px",
-            }}
           >
             <Link
               to={`${detailPath[itemType]}${item.id}`}
-              style={{ textDecoration: "none", color: "inherit" }}
+              className="text-decoration-none text-white"
             >
               {imageUrl ? (
                 <img
                   src={imageUrl}
                   alt={item.name}
-                  style={{
-                    width: "100%",
-                    height: "180px",
-                    objectFit: "cover",
-                    borderRadius: "6px",
-                  }}
+                  className="card-img-top"
+                  style={{ height: "180px", objectFit: "cover" }}
                 />
               ) : (
                 <div
-                  style={{
-                    width: "100%",
-                    height: "180px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "#222",
-                    borderRadius: "6px",
-                    color: "#888",
-                  }}
+                  className="d-flex align-items-center justify-content-center bg-secondary"
+                  style={{ height: "180px" }}
                 >
                   Sin imagen
                 </div>
               )}
-              <h3>{item.name}</h3>
+              <div className="card-body">
+                <h5 className="card-title">{item.name}</h5>
 
-              {itemType === "people" && (
-                <div
-                  style={{
-                    fontSize: "14px",
-                    color: "#ccc",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <p>Gender: {item.gender || "n/a"}</p>
-                  <p>Hair Color: {item.hair_color || "n/a"}</p>
-                  <p>Eye Color: {item.eye_color || "n/a"}</p>
-                </div>
-              )}
+                {itemType === "people" && (
+                  <ul className="list-unstyled small mb-0">
+                    <li>Gender: {item.gender || "n/a"}</li>
+                    <li>Hair Color: {item.hair_color || "n/a"}</li>
+                    <li>Eye Color: {item.eye_color || "n/a"}</li>
+                  </ul>
+                )}
 
-              {itemType === "planet" && (
-                <div
-                  style={{
-                    fontSize: "14px",
-                    color: "#ccc",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <p>Climate: {item.climate || "n/a"}</p>
-                  <p>Terrain: {item.terrain || "n/a"}</p>
-                </div>
-              )}
+                {itemType === "planet" && (
+                  <ul className="list-unstyled small mb-0">
+                    <li>Climate: {item.climate || "n/a"}</li>
+                    <li>Terrain: {item.terrain || "n/a"}</li>
+                  </ul>
+                )}
 
-              {itemType === "vehicle" && (
-                <div
-                  style={{
-                    fontSize: "14px",
-                    color: "#ccc",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <p>Model: {item.model || "n/a"}</p>
-                  <p>Manufacturer: {item.manufacturer || "n/a"}</p>
-                </div>
-              )}
+                {itemType === "vehicle" && (
+                  <ul className="list-unstyled small mb-0">
+                    <li>Model: {item.model || "n/a"}</li>
+                    <li>Manufacturer: {item.manufacturer || "n/a"}</li>
+                  </ul>
+                )}
+              </div>
             </Link>
 
-            {existingFav ? (
-              <button onClick={() => deleteFavorite(existingFav.id)}>
-                💔 Remove Favorite
-              </button>
-            ) : (
-              <button onClick={() => addFavorite(itemType, item.id)}>
-                ❤️ Add Favorite
-              </button>
-            )}
+            <div className="card-footer">
+              {existingFav ? (
+                <button
+                  className="btn btn-outline-danger btn-sm w-100"
+                  onClick={() => deleteFavorite(existingFav.id)}
+                >
+                  💔 Remove Favorite
+                </button>
+              ) : (
+                <button
+                  className="btn btn-outline-warning btn-sm w-100"
+                  onClick={() => addFavorite(itemType, item.id)}
+                >
+                  ❤️ Add Favorite
+                </button>
+              )}
+            </div>
           </div>
         );
       })}

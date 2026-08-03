@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import CharacterCards from "./CharacterCards";
 import fetchImagesForNames from "./useWikipediaImagesBatch";
+import { FavoritesContext } from "./context/FavoritesContext";
 
 function Home() {
   const [people, setPeople] = useState([]);
@@ -8,6 +9,7 @@ function Home() {
   const [vehicles, setVehicles] = useState([]);
   const [imagesMap, setImagesMap] = useState({});
   const hasFetched = useRef(false);
+  const { registerItems } = useContext(FavoritesContext);
 
   useEffect(() => {
     if (hasFetched.current) return;
@@ -23,6 +25,10 @@ function Home() {
         setPlanets(planetsData);
         setVehicles(vehiclesData);
 
+        registerItems("people", peopleData);
+        registerItems("planet", planetsData);
+        registerItems("vehicle", vehiclesData);
+
         const allNames = [
           ...peopleData.map((p) => p.name),
           ...planetsData.map((p) => p.name),
@@ -32,7 +38,7 @@ function Home() {
         fetchImagesForNames(allNames).then(setImagesMap);
       })
       .catch((err) => console.error("Error cargando datos:", err));
-  }, []);
+  }, [registerItems]);
 
   return (
     <>

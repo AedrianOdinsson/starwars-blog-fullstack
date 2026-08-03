@@ -4,6 +4,7 @@ export const FavoritesContext = createContext();
 
 export const FavoritesProvider = ({ children }) => {
   const [favorites, setFavorites] = useState([]);
+  const [catalog, setCatalog] = useState({});
 
   const loadFavorites = async () => {
     const res = await fetch("http://localhost:3001/users/1/favorites");
@@ -14,6 +15,20 @@ export const FavoritesProvider = ({ children }) => {
   useEffect(() => {
     loadFavorites();
   }, []);
+
+  const registerItems = (itemType, items) => {
+    setCatalog((prev) => {
+      const updated = { ...prev };
+      items.forEach((item) => {
+        updated[`${itemType}-${item.id}`] = item.name;
+      });
+      return updated;
+    });
+  };
+
+  const getItemName = (itemType, itemId) => {
+    return catalog[`${itemType}-${itemId}`] || `${itemType} #${itemId}`;
+  };
 
   const addFavorite = async (itemType, itemId) => {
     const res = await fetch("http://localhost:3001/favorite", {
@@ -40,7 +55,13 @@ export const FavoritesProvider = ({ children }) => {
 
   return (
     <FavoritesContext.Provider
-      value={{ favorites, addFavorite, deleteFavorite }}
+      value={{
+        favorites,
+        addFavorite,
+        deleteFavorite,
+        registerItems,
+        getItemName,
+      }}
     >
       {children}
     </FavoritesContext.Provider>

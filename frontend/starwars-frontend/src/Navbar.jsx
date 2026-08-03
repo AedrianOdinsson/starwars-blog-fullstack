@@ -2,7 +2,8 @@ import { useContext } from "react";
 import { FavoritesContext } from "./context/FavoritesContext";
 
 export const Navbar = () => {
-  const { favorites, deleteFavorite } = useContext(FavoritesContext);
+  const { favorites, deleteFavorite, getItemName } =
+    useContext(FavoritesContext);
 
   return (
     <nav>
@@ -14,7 +15,7 @@ export const Navbar = () => {
         <ul>
           {favorites.map((fav) => (
             <li key={fav.id}>
-              {fav.item_type} #{fav.item_id}
+              {getItemName(fav.item_type, fav.item_id)}
               <button onClick={() => deleteFavorite(fav.id)}>❌</button>
             </li>
           ))}
