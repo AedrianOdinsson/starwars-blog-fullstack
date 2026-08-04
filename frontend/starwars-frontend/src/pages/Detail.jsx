@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { FavoritesContext } from "./context/FavoritesContext";
-import { useWikipediaInfo } from "./useWikipediaInfo";
+import { FavoritesContext } from "../context/FavoritesContext";
+import { useWikipediaInfo } from "../services/useWikipediaInfo";
 
 const apiPath = {
   people: "people",

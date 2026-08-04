@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useContext } from "react";
-import CharacterCards from "./CharacterCards";
-import fetchImagesForNames from "./useWikipediaImagesBatch";
-import { FavoritesContext } from "./context/FavoritesContext";
+import CharacterCards from "../components/CharacterCards";
+import fetchImagesForNames from "../services/useWikipediaImagesBatch";
+import { FavoritesContext } from "../context/FavoritesContext";
 
 function Home() {
   const [people, setPeople] = useState([]);

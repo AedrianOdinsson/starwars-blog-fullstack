@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { FavoritesContext } from "./context/FavoritesContext";
+import { FavoritesContext } from "../context/FavoritesContext";
 
 export const Navbar = () => {
   const { favorites, deleteFavorite, getItemName } =

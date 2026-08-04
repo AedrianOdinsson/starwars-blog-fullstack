@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { Link } from "react-router-dom";
-import { FavoritesContext } from "./context/FavoritesContext";
+import { FavoritesContext } from "../context/FavoritesContext";
 
 const detailPath = {
   people: "/people/",

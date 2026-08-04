@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
@@ -13,7 +14,30 @@ CORS(app)
 # MODELOS
 # ============================
 
+class User(db.Model):
+    __tablename__ = "user"
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    first_name = db.Column(db.String(80), nullable=True)
+    last_name = db.Column(db.String(80), nullable=True)
+    subscription_date = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+
+    favorites = db.relationship("Favorite", backref="user", lazy=True)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "subscription_date": self.subscription_date.isoformat() if self.subscription_date else None,
+        }
+
+
 class People(db.Model):
+    __tablename__ = "people"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     birth_year = db.Column(db.String(50), nullable=True)
@@ -35,43 +59,69 @@ class People(db.Model):
             "mass": self.mass,
         }
 
+
 class Planet(db.Model):
+    __tablename__ = "planet"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     climate = db.Column(db.String(120), nullable=True)
     terrain = db.Column(db.String(120), nullable=True)
 
     def serialize(self):
-        return {"id": self.id, "name": self.name, "climate": self.climate, "terrain": self.terrain}
+        return {
+            "id": self.id,
+            "name": self.name,
+            "climate": self.climate,
+            "terrain": self.terrain,
+        }
 
 
 class Vehicle(db.Model):
+    __tablename__ = "vehicle"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     model = db.Column(db.String(120), nullable=True)
     manufacturer = db.Column(db.String(120), nullable=True)
 
     def serialize(self):
-        return {"id": self.id, "name": self.name, "model": self.model, "manufacturer": self.manufacturer}
-
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
-
-    def serialize(self):
-        return {"id": self.id, "email": self.email}
+        return {
+            "id": self.id,
+            "name": self.name,
+            "model": self.model,
+            "manufacturer": self.manufacturer,
+        }
 
 
 class Favorite(db.Model):
+    __tablename__ = "favorite"
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    item_type = db.Column(db.String(50), nullable=False)  # "people", "planet", "vehicle"
-    item_id = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    people_id = db.Column(db.Integer, db.ForeignKey("people.id"), nullable=True)
+    planet_id = db.Column(db.Integer, db.ForeignKey("planet.id"), nullable=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey("vehicle.id"), nullable=True)
+
+    people = db.relationship("People")
+    planet = db.relationship("Planet")
+    vehicle = db.relationship("Vehicle")
 
     def serialize(self):
-        return {"id": self.id, "user_id": self.user_id, "item_type": self.item_type, "item_id": self.item_id}
+        if self.people_id:
+            item_type, item_id, name = "people", self.people_id, self.people.name
+        elif self.planet_id:
+            item_type, item_id, name = "planet", self.planet_id, self.planet.name
+        elif self.vehicle_id:
+            item_type, item_id, name = "vehicle", self.vehicle_id, self.vehicle.name
+        else:
+            item_type, item_id, name = None, None, None
+
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "item_type": item_type,
+            "item_id": item_id,
+            "name": name,
+        }
 
 
 # ============================
@@ -97,7 +147,7 @@ def get_vehicles():
 
 
 # ============================
-# ENDPOINTS - DETALLE (nuevo)
+# ENDPOINTS - DETALLE
 # ============================
 
 @app.route("/people/<int:people_id>", methods=["GET"])
@@ -141,11 +191,17 @@ def add_favorite():
     if not data or "user_id" not in data or "item_type" not in data or "item_id" not in data:
         return jsonify({"error": "Missing fields"}), 400
 
-    new_fav = Favorite(
-        user_id=data["user_id"],
-        item_type=data["item_type"],
-        item_id=data["item_id"]
-    )
+    new_fav = Favorite(user_id=data["user_id"])
+
+    if data["item_type"] == "people":
+        new_fav.people_id = data["item_id"]
+    elif data["item_type"] == "planet":
+        new_fav.planet_id = data["item_id"]
+    elif data["item_type"] == "vehicle":
+        new_fav.vehicle_id = data["item_id"]
+    else:
+        return jsonify({"error": "Invalid item_type"}), 400
+
     db.session.add(new_fav)
     db.session.commit()
     return jsonify(new_fav.serialize()), 201
@@ -170,9 +226,13 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
 
-        # crea el usuario de prueba id=1 si no existe (el frontend lo usa fijo)
         if not User.query.get(1):
-            test_user = User(email="test@starwars.com", password="1234")
+            test_user = User(
+                email="test@starwars.com",
+                password="1234",
+                first_name="Test",
+                last_name="User",
+            )
             db.session.add(test_user)
             db.session.commit()
 
