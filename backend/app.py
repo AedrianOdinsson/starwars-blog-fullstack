@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from datetime import datetime
 
 app = Flask(__name__)
@@ -8,6 +9,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 CORS(app)
 
 # ============================
@@ -173,43 +175,66 @@ def get_vehicle(vehicle_id):
         return jsonify({"error": "Vehicle not found"}), 404
     return jsonify(vehicle.serialize()), 200
 
+@app.route("/users", methods=["GET"])
+def get_users():
+    users = User.query.all()
+    return jsonify([u.serialize() for u in users]), 200
 
 # ============================
 # ENDPOINTS - FAVORITOS
 # ============================
 
-@app.route("/users/<int:user_id>/favorites", methods=["GET"])
-def get_user_favorites(user_id):
-    favs = Favorite.query.filter_by(user_id=user_id).all()
-    return jsonify([f.serialize() for f in favs]), 200
+@app.route("/favorite/planet/<int:planet_id>", methods=["POST"])
+def add_favorite_planet(planet_id):
+    user_id = request.json.get("user_id", 1) if request.is_json else 1
+
+    new_fav = Favorite(user_id=user_id, planet_id=planet_id)
+    db.session.add(new_fav)
+    db.session.commit()
+    return jsonify(new_fav.serialize()), 201
 
 
 @app.route("/favorite", methods=["POST"])
 def add_favorite():
     data = request.get_json()
 
-    if not data or "user_id" not in data or "item_type" not in data or "item_id" not in data:
-        return jsonify({"error": "Missing fields"}), 400
+    user_id = data.get("user_id")
+    item_type = data.get("item_type")
+    item_id = data.get("item_id")
 
-    new_fav = Favorite(user_id=data["user_id"])
+    favorite = Favorite(user_id=user_id)
 
-    if data["item_type"] == "people":
-        new_fav.people_id = data["item_id"]
-    elif data["item_type"] == "planet":
-        new_fav.planet_id = data["item_id"]
-    elif data["item_type"] == "vehicle":
-        new_fav.vehicle_id = data["item_id"]
+    if item_type == "people":
+        favorite.people_id = item_id
+    elif item_type == "planet":
+        favorite.planet_id = item_id
+    elif item_type == "vehicle":
+        favorite.vehicle_id = item_id
     else:
         return jsonify({"error": "Invalid item_type"}), 400
 
-    db.session.add(new_fav)
+    db.session.add(favorite)
     db.session.commit()
-    return jsonify(new_fav.serialize()), 201
+
+    return jsonify(favorite.serialize()), 201
 
 
-@app.route("/favorite/<int:fav_id>", methods=["DELETE"])
-def delete_favorite(fav_id):
-    fav = Favorite.query.get(fav_id)
+@app.route("/favorite/<int:favorite_id>", methods=["DELETE"])
+def delete_favorite(favorite_id):
+    favorite = Favorite.query.get(favorite_id)
+
+    if favorite is None:
+        return jsonify({"error": "Favorite not found"}), 404
+
+    db.session.delete(favorite)
+    db.session.commit()
+
+    return jsonify({"msg": "Favorite deleted"}), 200
+
+
+@app.route("/favorite/people/<int:people_id>", methods=["DELETE"])
+def delete_favorite_people(people_id):
+    fav = Favorite.query.filter_by(people_id=people_id).first()
     if fav is None:
         return jsonify({"error": "Favorite not found"}), 404
 
@@ -217,6 +242,10 @@ def delete_favorite(fav_id):
     db.session.commit()
     return jsonify({"msg": "Favorite deleted"}), 200
 
+@app.route("/users/<int:user_id>/favorites", methods=["GET"])
+def get_user_favorites(user_id):
+    favorites = Favorite.query.filter_by(user_id=user_id).all()
+    return jsonify([fav.serialize() for fav in favorites]), 200
 
 # ============================
 # RUN SERVER
